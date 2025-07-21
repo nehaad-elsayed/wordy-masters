@@ -1,5 +1,7 @@
+//&&&&&&&&&&&&&&&&& Global
 const letters = document.querySelectorAll(".scoreboard-letter");
 const loadingBox = document.querySelector(".info-bar");
+const logo =document.querySelector(".brand")
 const ANSWER_LENGTH = 5; //capital letters it means a constant value will not change ever
 const ROUNDS = 6 ;
 let isLoading =true
@@ -10,10 +12,10 @@ let wordParts =[];
 let map ={};
 let word =""
 let done;
+let validWord=""
 
 
-
-//*** eventsssssssss =>>>>
+//***&&&&&&&&& eventsssssssss =>>>>
 
 document.addEventListener("keydown", (e) => {
 if(done || isLoading){
@@ -36,14 +38,12 @@ if(done || isLoading){
   }
 });
 
-//***** functions =====>
+//*****&&&&&&&& functions =====>
 
-//handles validation  for letters  ===>>>
+//to handle validation  for letters  ===>>>
 function isLetter(letter) {
   return /^[a-zA-Z]$/.test(letter);
 }
-
-
 
 
 async function getWord(){
@@ -60,11 +60,9 @@ async function getWord(){
 }
 getWord()
 
-function setLoading(isLoading){
-     loadingBox.classList.toggle("show",isLoading)
-}
 
-//*** add letter ==========>>>
+
+//&&&&&&&& add letter ==========>>>
 function addLetter(letter) {
   if (currentGuess.length < ANSWER_LENGTH) {
     //to add letter in the end
@@ -74,51 +72,74 @@ function addLetter(letter) {
     currentGuess = currentGuess.substring(0, currentGuess.length - 1) + letter; // if the word reach to 5 letters replace the last letter with the new letter ( لو الكلمة وصلت 5 حروف:بدل اخر حرف بالجديد)
   }
 
-  letters[ANSWER_LENGTH * currentRow + currentGuess.length - 1].innerText =
-    letter; //zawd 3la elletter elly 3aleeh eldoor //example=> if the guess=2 and row =0 letters[5 * 0 + 2 - 1] = letters[1] //يبقي ده مكان الحرف اللي هيتضاف جديد
+  letters[ANSWER_LENGTH * currentRow + currentGuess.length - 1].innerText =letter; //zawd 3la elletter elly 3aleeh eldoor //example=> if the guess=2 and row =0 letters[5 * 0 + 2 - 1] = letters[1] //يبقي ده مكان الحرف اللي هيتضاف جديد
 }
 
+
+//&&&&&&&&&& to  commit when press enter 
 async function commit() {
   if (currentGuess.length != ANSWER_LENGTH) {
     return;
   }
-if(currentGuess == word){
-    toastr.success("Congrats you win 🥳")
-    done=true
-    return;
-} else if(currentGuess!= word){
-toastr.error(" incorrect word try another one")
-}
-   guessParts= currentGuess.split("")
-   map = makeMap(wordParts)
-//    console.log(map)
-//    console.log(guessParts)
-//    console.log(wordParts)
+
+isLoading=true
+setLoading(true)
+
+const response = await fetch(`https://words.dev-apis.com/validate-word`,
+  {
+    method:"POST",
+    body:JSON.stringify({word : currentGuess}),
+    headers:{
+      "content-type":"application/json"
+    }
+  }
+)
+const data =await response.json()
+validWord= data.validWord
+console.log(validWord)
+isLoading= false
+setLoading(false)
+
+
+guessParts= currentGuess.split("")
+map = makeMap(wordParts)
+  
 
  for(let i = 0 ; i< ANSWER_LENGTH ; i++){  //loop on the row and compare array of the guess letters with the array of the word letters
 if(wordParts[i]===guessParts[i]){
      letters[currentRow *ANSWER_LENGTH + i].classList.add("correct")
      map[guessParts[i]]--;
 
-}else if (wordParts.includes(guessParts[i])){ 
+}else if (wordParts.includes(guessParts[i])&& map[guessParts[i]]>0){ 
          letters[currentRow *ANSWER_LENGTH + i].classList.add("close")
            map[guessParts[i]]--;
 
 }else if (!wordParts.includes(guessParts[i])){
-         letters[currentRow *ANSWER_LENGTH + i].classList.add("wrong","invalid")
-
+letters[currentRow *ANSWER_LENGTH + i].classList.add("wrong","invalid")
+        
 }
    }
 
-    currentRow++; //enzel line
-   currentGuess = "";
+  currentRow++; //enzel line
 
-   if (currentRow === ROUNDS){
-    toastr.info(`you lost word was ${word}`)
-   }
- 
+if (currentRow === ROUNDS && currentGuess !== word) {
+  toastr.info(`You lost! The word was ${word}`);
+  done = true;
+}
+if (currentGuess === word) {
+  toastr.success("Congrats you win 🥳");
+  logo.classList.add("winner")
+  done = true;
+  return;
+} else if (!validWord) {
+  toastr.error("Incorrect guess");
+  
+} 
+ currentGuess=""  
 }
 
+
+//*****&&&&&&& to backspace 
 function backspace() {
   currentGuess = currentGuess.substring(0, currentGuess.length - 1);
   letters[ANSWER_LENGTH * currentRow + currentGuess.length].innerText = "";
@@ -139,7 +160,12 @@ function makeMap(arr){
             obj[letter]= 1;
 
         }
-     return obj
+    
 
     }
+     return obj 
+}
+
+function setLoading(isLoading){
+     loadingBox.classList.toggle("show",isLoading)
 }
