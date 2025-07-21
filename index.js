@@ -3,19 +3,33 @@ const letters = document.querySelectorAll(".scoreboard-letter");
 const loadingBox = document.querySelector(".info-bar");
 const logo =document.querySelector(".brand")
 const ANSWER_LENGTH = 5; //capital letters it means a constant value will not change ever
-const ROUNDS = 6 ;
+const ROUNDS = 6 ; // capital letters it means a constant value will not change ever
+let currentRow = 0;
 let isLoading =true
 let currentGuess = "";
-let currentRow = 0;
 let guessParts =[];
 let wordParts =[];
 let map ={};
+let validWord=""
 let word =""
 let done;
-let validWord=""
+
+
 
 
 //***&&&&&&&&& eventsssssssss =>>>>
+window.addEventListener("load", () => {
+  const welcomeMessage = document.getElementById("welcome-message");
+  
+  setTimeout(() => {
+    welcomeMessage.style.opacity = "0";
+    
+    setTimeout(() => {
+      welcomeMessage.remove();
+    }, 1000); 
+  }, 3000); 
+});
+
 
 document.addEventListener("keydown", (e) => {
 if(done || isLoading){
@@ -105,20 +119,23 @@ guessParts= currentGuess.split("")
 map = makeMap(wordParts)
   
 
- for(let i = 0 ; i< ANSWER_LENGTH ; i++){  //loop on the row and compare array of the guess letters with the array of the word letters
-if(wordParts[i]===guessParts[i]){
-     letters[currentRow *ANSWER_LENGTH + i].classList.add("correct")
-     map[guessParts[i]]--;
 
-}else if (wordParts.includes(guessParts[i])&& map[guessParts[i]]>0){ 
-         letters[currentRow *ANSWER_LENGTH + i].classList.add("close")
-           map[guessParts[i]]--;
-
-}else if (!wordParts.includes(guessParts[i])){
-letters[currentRow *ANSWER_LENGTH + i].classList.add("wrong","invalid")
-        
+for (let i = 0; i < ANSWER_LENGTH; i++) { //loop on the row and compare array of the guess letters with the array of the word letters
+  const square = letters[currentRow * ANSWER_LENGTH + i]; 
+  
+  if (wordParts[i] === guessParts[i]) {
+    square.classList.add("correct");
+    map[guessParts[i]]--;
+  } else if (wordParts.includes(guessParts[i])&& map[guessParts[i]]>0 ) {
+    square.classList.add("close");
+    map[guessParts[i]]--;
+  } else {
+    square.classList.add("wrong", "invalid");
+    setTimeout(() => {
+      square.classList.remove("invalid");
+    }, 5000);
+  }
 }
-   }
 
   currentRow++; //enzel line
 
@@ -127,7 +144,7 @@ if (currentRow === ROUNDS && currentGuess !== word) {
   done = true;
 }
 if (currentGuess === word) {
-  toastr.success("Congrats you win 🥳");
+  toastr.success("Congrats you won 🥳");
   logo.classList.add("winner")
   done = true;
   return;
